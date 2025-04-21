@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listeyi Görüntüle</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f0faff, #c2f0f7);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 700px;
+    }
+    h1 {
+      color: #00bcd4;
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    input, button {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    img {
+      max-width: 100px;
+      max-height: 100px;
+    }
+    .button-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="listTitle"></h1>
+    <table id="listTable">
+      <thead>
+        <tr>
+          <th>Öğe Adı</th>
+          <th>Miktar</th>
+          <th>Resim</th>
+        </tr>
+      </thead>
+      <tbody id="listBody"></tbody>
+    </table>
+    <div class="button-container">
+      <button onclick="enableEdit()">Düzenle</button>
+      <button onclick="saveChanges()" style="display:none">Değişiklikleri Kaydet</button>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const listId = urlParams.get("id");
+    const list = JSON.parse(localStorage.getItem("list_" + listId));
+
+    const listTitle = document.getElementById("listTitle");
+    const listBody = document.getElementById("listBody");
+    const editButton = document.querySelector("button[onclick='enableEdit()']");
+    const saveButton = document.querySelector("button[onclick='saveChanges()']");
+
+    function renderList(editable = false) {
+      listTitle.textContent = list.title;
+      listBody.innerHTML = "";
+
+      list.items.forEach((item, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${editable ? `<input type='text' value='${item.name}'>` : item.name}</td>
+          <td>${editable ? `<input type='text' value='${item.amount}'>` : item.amount}</td>
+          <td>
+            ${editable ? `<input type='file' accept='image/*' data-index='${index}'><br>` : (item.imageUrl ? `<img src='${item.imageUrl}'>` : "")}
+          </td>
+        `;
+        listBody.appendChild(row);
+      });
+    }
+
+    function enableEdit() {
+      renderList(true);
+      editButton.style.display = "none";
+      saveButton.style.display = "inline-block";
+    }
+
+    function saveChanges() {
+      const rows = document.querySelectorAll("#listBody tr");
+      const newItems = [];
+
+      rows.forEach((row, i) => {
+        const name = row.querySelector("td:nth-child(1) input").value;
+        const amount = row.querySelector("td:nth-child(2) input").value;
+        const fileInput = row.querySelector("td:nth-child(3) input[type='file']");
+        const file = fileInput.files[0];
+        let imageUrl = list.items[i].imageUrl;
+
+        if (file) {
+          imageUrl = URL.createObjectURL(file);
+        }
+
+        newItems.push({ name, amount, imageUrl });
+      });
+
+      list.items = newItems;
+      localStorage.setItem("list_" + list.id, JSON.stringify(list));
+      renderList(false);
+      editButton.style.display = "inline-block";
+      saveButton.style.display = "none";
+    }
+
+    renderList();
+  </script>
+</body>
+</html>
